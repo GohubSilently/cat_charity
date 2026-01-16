@@ -1,5 +1,8 @@
+from http import HTTPStatus
+
 from aiogoogle import Aiogoogle
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic_core import ErrorDetails
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_async_session
@@ -36,6 +39,8 @@ async def get_report(
             charity_projects,
             wrapper_services
         )
-    except Exception as error:
-        print(f'Ошибка: {error}')
+    except HTTPException as error:
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST, detail=error
+        )
     return link

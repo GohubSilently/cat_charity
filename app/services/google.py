@@ -7,8 +7,10 @@ from app.core.config import settings
 
 SHORT_FORMAT = '%Y/%m/%d'
 FULL_FORMAT = f'{SHORT_FORMAT} %H:%M:%S'
+ROW = 100
+COLUMN = 5
 
-BODY_CONST = dict(
+BODY = dict(
     properties=dict(
         title='Отчет от {current_date}',
         locale='ru_RU',
@@ -19,24 +21,18 @@ BODY_CONST = dict(
             sheetId=0,
             title='QRKot',
             gridProperties=dict(
-                rowCount=100,
-                columnCount=5
+                rowCount=ROW,
+                columnCount=COLUMN
             )
         )
     )]
 )
 
-VALUES_CONST = list(
-    (
-        list(['Отчет от', '{current_date}']),
-        list(['Топ проектов по скорости закрытия']),
-        list(['Название проекта', 'Время сбора', 'Описание'])
-    )
-)
-
-ROW = BODY_CONST['sheets'][0]['properties']['gridProperties']['rowCount']
-COLUMN = BODY_CONST['sheets'][0]['properties']['gridProperties']['columnCount']
-RANGE = f'R1C1:R{str(ROW)}C{str(COLUMN)}'
+HEADER = [
+    [('Отчет от', '{current_date}')],
+    [('Топ проектов по скорости закрытия',)],
+    [('Название проекта', 'Время сбора', 'Описание')]
+]
 
 
 async def create_spreadsheets(wrapper_services: Aiogoogle) -> str:
@@ -44,16 +40,13 @@ async def create_spreadsheets(wrapper_services: Aiogoogle) -> str:
     service = await wrapper_services.discover(
         'sheets', 'v4'
     )
-    body_copy = BODY_CONST.copy()
-    body_copy['properties']['title'] = body_copy['properties']['title'].format(
+    BODY['properties']['title'] = BODY['properties']['title'].format(
         current_date=current_date
     )
     response = await wrapper_services.as_service_account(
-        service.spreadsheets.create(json=BODY_CONST)
+        service.spreadsheets.create(json=BODY)
     )
-    full_url = (f'https://docs.google.com/spreadsheets/d/'
-                f'{response["spreadsheetId"]}')
-    return response['spreadsheetId'], full_url
+    return response['spreadsheetId'], response['url']
 
 
 async def set_user_permissions(
@@ -86,26 +79,30 @@ async def update_spreadsheets_value(
     service = await wrapper_services.discover(
         'sheets', 'v4'
     )
-    VALUES_CONST[0][1] = current_date
+    HEADER[0][1] = HEADER[0][1].format(current_date=current_date)
     table_values = [
-        *VALUES_CONST,
+        *HEADER,
         *[list(
             map(
-                str, (charity[0], charity[2] - charity[1], charity[3])
+                str, (name, close_date - create_date, description)
             )
-        ) for charity in charity_project]
+        ) for name, create_date, close_date, description in charity_project]
     ]
-    if len(table_values) > ROW:
-        raise ValueError('Объем данных превышает количество строк!')
-    update_body = {
-        'majorDimension': 'ROWS',
-        'values': table_values
-    }
+    if len(table_values) > ROW or len(charity_project) > COLUMN:
+        raise ValueError(
+            'Объем входных данных: '
+            f'cтрок - {len(table_values)}, колонок - {len(table_values)} '
+            f'превышает заданные знеачения: строк - {ROW}, колонок - {COLUMN}.'
+        )
     await wrapper_services.as_service_account(
         service.spreadsheets.values.update(
             spreadsheetId=spreadsheet_id,
-            range=RANGE,
+            range=f'R1C1:R{str(len(table_values))}'
+                  f'C{str(len(charity_project))}',
             valueInputOption='USER_ENTERED',
-            json=update_body
+            json={
+                'majorDimension': 'ROWS',
+                'values': table_values
+            }
         )
     )
