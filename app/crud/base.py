@@ -43,15 +43,22 @@ class CRUDBase:
             await session.refresh(db_object)
         return db_object
 
-    async def update(self, db_object, object_in, session: AsyncSession):
+    async def update(
+            self,
+            db_object,
+            object_in,
+            session: AsyncSession,
+            commit: bool = True
+    ):
         obj_data = jsonable_encoder(db_object)
         update_data = object_in.dict(exclude_unset=True)
         for field in obj_data:
             if field in update_data:
                 setattr(db_object, field, update_data[field])
         session.add(db_object)
-        await session.commit()
-        await session.refresh(db_object)
+        if commit:
+            await session.commit()
+            await session.refresh(db_object)
         return db_object
 
     async def remove(self, object, session: AsyncSession):

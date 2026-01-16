@@ -7,15 +7,17 @@ from app.core.google_client import get_service
 from app.core.user import current_superuser
 from app.crud.charity import charity_crud
 from app.services.google import (
-    create_spreadsheets, set_user_permissions, update_spreadsheets_value
+    create_spreadsheets, set_user_permissions,
+    update_spreadsheets_value
 )
+
 
 router = APIRouter()
 
 
 @router.post(
     '/',
-    # response_model=list[dict[str, str]],
+    response_model=str,
     dependencies=[Depends(current_superuser)]
 )
 async def get_report(
@@ -26,11 +28,14 @@ async def get_report(
     charity_projects = await charity_crud.get_projects_by_completion_rate(
         session
     )
-    spreadsheetid = await create_spreadsheets(wrapper_services)
-    await set_user_permissions(spreadsheetid, wrapper_services)
-    await update_spreadsheets_value(
-        spreadsheetid,
-        charity_projects,
-        wrapper_services
-    )
-    return charity_projects
+    spreadsheet_id, link = await create_spreadsheets(wrapper_services)
+    await set_user_permissions(spreadsheet_id, wrapper_services)
+    try:
+        await update_spreadsheets_value(
+            spreadsheet_id,
+            charity_projects,
+            wrapper_services
+        )
+    except Exception as error:
+        print(f'Ошибка: {error}')
+    return link

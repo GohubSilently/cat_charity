@@ -1,4 +1,4 @@
-from sqlalchemy import select, desc, extract
+from sqlalchemy import select, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.crud.base import CRUDBase
@@ -29,30 +29,14 @@ class CRUDCharity(CRUDBase):
         self,
         session: AsyncSession
     ):
-        start = (
-            extract('year', self.model.create_date) * 365 +
-            extract('month', self.model.create_date) * 30 +
-            extract('day', self.model.create_date)
-        )
-        end = (
-            extract('year', self.model.close_date) * 365 +
-            extract('month', self.model.close_date) * 30 +
-            extract('day', self.model.close_date)
-        )
-        charity_projects = await session.execute(select(
+        return (await session.execute(select(
             self.model.name,
-            end - start,
+            self.model.create_date,
+            self.model.close_date,
             self.model.description
         ).where(
-            self.model.fully_invested is True
-        ).order_by(end - start))
-        return [
-            {
-                'name': name,
-                'time': time,
-                'description': description
-            } for name, time, description in charity_projects.all()
-        ]
+            self.model.fully_invested.is_(True)
+        ).order_by(self.model.close_date - self.model.create_date))).all()
 
 
 charity_crud = CRUDCharity(CharityProject)

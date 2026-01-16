@@ -4,38 +4,60 @@ from aiogoogle import Aiogoogle
 
 from app.core.config import settings
 
+
 SHORT_FORMAT = '%Y/%m/%d'
 FULL_FORMAT = f'{SHORT_FORMAT} %H:%M:%S'
+
+BODY_CONST = dict(
+    properties=dict(
+        title='Отчет от {current_date}',
+        locale='ru_RU',
+    ),
+    sheets=[dict(
+        properties=dict(
+            sheetType='GRID',
+            sheetId=0,
+            title='QRKot',
+            gridProperties=dict(
+                rowCount=100,
+                columnCount=5
+            )
+        )
+    )]
+)
+
+VALUES_CONST = list(
+    (
+        list(['Отчет от', '{current_date}']),
+        list(['Топ проектов по скорости закрытия']),
+        list(['Название проекта', 'Время сбора', 'Описание'])
+    )
+)
+
+ROW = BODY_CONST['sheets'][0]['properties']['gridProperties']['rowCount']
+COLUMN = BODY_CONST['sheets'][0]['properties']['gridProperties']['columnCount']
+RANGE = f'R1C1:R{str(ROW)}C{str(COLUMN)}'
 
 
 async def create_spreadsheets(wrapper_services: Aiogoogle) -> str:
     current_date = datetime.now().strftime(SHORT_FORMAT)
-    service = await wrapper_services.discover('sheets', 'v4')
-    spreadsheet_body = {
-        'properties': {
-            'title': f'Отчет на {current_date}',
-            'locale': 'ru_RU'
-        },
-        'sheets': [{
-            'properties': {
-                'sheetType': 'GRID',
-                'sheetId': 0,
-                'title': 'QRKot',
-                'gridProperties': {
-                    'rowCount': 100,
-                    'columnCount': 5
-                }
-            }
-        }]
-    }
-    response = await wrapper_services.as_service_account(
-        service.spreadsheets.create(json=spreadsheet_body)
+    service = await wrapper_services.discover(
+        'sheets', 'v4'
     )
-    return response['spreadsheetId']
+    body_copy = BODY_CONST.copy()
+    body_copy['properties']['title'] = body_copy['properties']['title'].format(
+        current_date=current_date
+    )
+    response = await wrapper_services.as_service_account(
+        service.spreadsheets.create(json=BODY_CONST)
+    )
+    full_url = (f'https://docs.google.com/spreadsheets/d/'
+                f'{response["spreadsheetId"]}')
+    return response['spreadsheetId'], full_url
 
 
 async def set_user_permissions(
-    spreadsheetid: str,
+    spreadsheet_id: str,
     wrapper_services: Aiogoogle
 ) -> None:
      permissions_body = {  # noqa E111
@@ -48,7 +70,7 @@ async def set_user_permissions(
      )
      await wrapper_services.as_service_account(  # noqa E111
          service.permissions.create(
-             fileId=spreadsheetid,
+             fileId=spreadsheet_id,
              json=permissions_body,
              fields='id'
          )
@@ -56,7 +78,7 @@ async def set_user_permissions(
 
 
 async def update_spreadsheets_value(
-    spreadsheetid: str,
+    spreadsheet_id: str,
     charity_project: list,
     wrapper_services: Aiogoogle
 ):
@@ -64,27 +86,25 @@ async def update_spreadsheets_value(
     service = await wrapper_services.discover(
         'sheets', 'v4'
     )
+    VALUES_CONST[0][1] = current_date
     table_values = [
-        ['Отчет от', f'{current_date}'],
-        ['Топ проектов по скорости закрытия'],
-        ['Название проекта', 'Время сбора', 'Описание']
+        *VALUES_CONST,
+        *[list(
+            map(
+                str, (charity[0], charity[2] - charity[1], charity[3])
+            )
+        ) for charity in charity_project]
     ]
-    for charity in charity_project:
-        table_values.append(
-            [
-                str(charity['name']),
-                str(charity['time']),
-                str(charity['description'])
-            ]
-        )
+    if len(table_values) > ROW:
+        raise ValueError('Объем данных превышает количество строк!')
     update_body = {
         'majorDimension': 'ROWS',
         'values': table_values
     }
     await wrapper_services.as_service_account(
-        service.spreadsheets.value.update(
-            spreadsheetId=spreadsheetid,
-            range=f'A1:E{len(table_values)}',
+        service.spreadsheets.values.update(
+            spreadsheetId=spreadsheet_id,
+            range=RANGE,
             valueInputOption='USER_ENTERED',
             json=update_body
         )
