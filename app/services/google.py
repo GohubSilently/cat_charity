@@ -31,7 +31,7 @@ BODY = dict(
 
 HEADER = [
     ['Отчет от', '{current_date}'],
-    ['Топ проектов по скорости закрытия',],
+    ['Топ проектов по скорости закрытия'],
     ['Название проекта', 'Время сбора', 'Описание']
 ]
 
@@ -42,9 +42,8 @@ async def create_spreadsheets(wrapper_services: Aiogoogle) -> str:
         'sheets', 'v4'
     )
     update_body = copy.deepcopy(BODY)
-    update_body['properties']['title'] = update_body['properties']['title'].format(
-        current_date=current_date
-    )
+    update_body['properties']['title'] = update_body['properties'][
+        'title'].format(current_date=current_date)
     response = await wrapper_services.as_service_account(
         service.spreadsheets.create(json=update_body)
     )
