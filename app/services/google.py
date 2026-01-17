@@ -1,3 +1,4 @@
+import copy
 from datetime import datetime
 
 from aiogoogle import Aiogoogle
@@ -29,9 +30,9 @@ BODY = dict(
 )
 
 HEADER = [
-    [('Отчет от', '{current_date}')],
-    [('Топ проектов по скорости закрытия',)],
-    [('Название проекта', 'Время сбора', 'Описание')]
+    ['Отчет от', '{current_date}'],
+    ['Топ проектов по скорости закрытия',],
+    ['Название проекта', 'Время сбора', 'Описание']
 ]
 
 
@@ -40,11 +41,12 @@ async def create_spreadsheets(wrapper_services: Aiogoogle) -> str:
     service = await wrapper_services.discover(
         'sheets', 'v4'
     )
-    BODY['properties']['title'] = BODY['properties']['title'].format(
+    update_body = copy.deepcopy(BODY)
+    update_body['properties']['title'] = update_body['properties']['title'].format(
         current_date=current_date
     )
     response = await wrapper_services.as_service_account(
-        service.spreadsheets.create(json=BODY)
+        service.spreadsheets.create(json=update_body)
     )
     return response['spreadsheetId'], response['url']
 
@@ -79,7 +81,8 @@ async def update_spreadsheets_value(
     service = await wrapper_services.discover(
         'sheets', 'v4'
     )
-    HEADER[0][1] = HEADER[0][1].format(current_date=current_date)
+    update_header = copy.deepcopy(HEADER)
+    update_header[0][1] = update_header[0][1].format(current_date=current_date)
     table_values = [
         *HEADER,
         *[list(
@@ -88,17 +91,18 @@ async def update_spreadsheets_value(
             )
         ) for name, create_date, close_date, description in charity_project]
     ]
-    if len(table_values) > ROW or len(charity_project) > COLUMN:
+    if len(table_values) > ROW or len(charity_project[0]) > COLUMN:
         raise ValueError(
             'Объем входных данных: '
-            f'cтрок - {len(table_values)}, колонок - {len(table_values)} '
-            f'превышает заданные знеачения: строк - {ROW}, колонок - {COLUMN}.'
+            f'cтрок - {len(table_values)}, колонок - '
+            f'{len(charity_project[1])} превышает заданные знеачения: '
+            f'строк - {ROW}, колонок - {COLUMN}.'
         )
     await wrapper_services.as_service_account(
         service.spreadsheets.values.update(
             spreadsheetId=spreadsheet_id,
-            range=f'R1C1:R{str(len(table_values))}'
-                  f'C{str(len(charity_project))}',
+            range=f'R1C1:R{len(table_values)}'
+                  f'C{len(charity_project)}',
             valueInputOption='USER_ENTERED',
             json={
                 'majorDimension': 'ROWS',

@@ -1,6 +1,6 @@
 from http import HTTPStatus
 
-from aiogoogle import Aiogoogle
+from aiogoogle import Aiogoogle, AiogoogleError
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -34,11 +34,11 @@ async def get_report(
     await set_user_permissions(spreadsheet_id, wrapper_services)
     try:
         await update_spreadsheets_value(
-            spreadsheet_id,
+            '1wJJrdquo5Eoi6FJaSXMsP95GrrHEaO3VJMRjZVmSXYI',
             charity_projects,
             wrapper_services
         )
-    except HTTPException as error:
+    except AiogoogleError as error:
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST, detail=error
         )
