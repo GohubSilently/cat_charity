@@ -2,8 +2,13 @@ import copy
 from datetime import datetime
 
 from aiogoogle import Aiogoogle
+from aiogoogle.excs import AiogoogleError
 
 from app.core.config import settings
+
+
+class GoggleError(Exception):
+    pass
 
 
 SHORT_FORMAT = '%Y/%m/%d'
@@ -90,22 +95,25 @@ async def update_spreadsheets_value(
             )
         ) for name, create_date, close_date, description in charity_project]
     ]
-    if len(table_values) > ROW or len(charity_project[0]) > COLUMN:
+    if len(table_values) > ROW or len(table_values[2]) > COLUMN:
         raise ValueError(
             'Объем входных данных: '
             f'cтрок - {len(table_values)}, колонок - '
             f'{len(charity_project[1])} превышает заданные знеачения: '
             f'строк - {ROW}, колонок - {COLUMN}.'
         )
-    await wrapper_services.as_service_account(
-        service.spreadsheets.values.update(
-            spreadsheetId=spreadsheet_id,
-            range=f'R1C1:R{len(table_values)}'
-                  f'C{len(charity_project)}',
-            valueInputOption='USER_ENTERED',
-            json={
-                'majorDimension': 'ROWS',
-                'values': table_values
-            }
+    try:
+        await wrapper_services.as_service_account(
+            service.spreadsheets.values.update(
+                spreadsheetId=spreadsheet_id,
+                range=f'R1C1:R{len(table_values)}'
+                      f'C{len(table_values[2])}',
+                valueInputOption='USER_ENTERED',
+                json={
+                    'majorDimension': 'ROWS',
+                    'values': table_values
+                }
+            )
         )
-    )
+    except AiogoogleError as error:
+        raise GoggleError(str(error))
