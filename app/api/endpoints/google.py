@@ -1,6 +1,6 @@
 from http import HTTPStatus
 
-from aiogoogle import Aiogoogle
+from aiogoogle import Aiogoogle, AiogoogleError
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -10,7 +10,7 @@ from app.core.user import current_superuser
 from app.crud.charity import charity_crud
 from app.services.google import (
     create_spreadsheets, set_user_permissions,
-    update_spreadsheets_value, GoggleError
+    update_spreadsheets_value
 )
 
 
@@ -38,7 +38,7 @@ async def get_report(
             charity_projects,
             wrapper_services
         )
-    except GoggleError as error:
+    except AiogoogleError as error:
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST, detail=str(error)
         )

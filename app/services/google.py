@@ -7,10 +7,6 @@ from aiogoogle.excs import AiogoogleError
 from app.core.config import settings
 
 
-class GoggleError(Exception):
-    pass
-
-
 SHORT_FORMAT = '%Y/%m/%d'
 FULL_FORMAT = f'{SHORT_FORMAT} %H:%M:%S'
 ROW = 100
@@ -95,11 +91,15 @@ async def update_spreadsheets_value(
             )
         ) for name, create_date, close_date, description in charity_project]
     ]
+    max_length = 0
+    for value in table_values:
+        if len(value) > max_length:
+            max_length = len(value)
     if len(table_values) > ROW or len(table_values[2]) > COLUMN:
         raise ValueError(
             'Объем входных данных: '
             f'cтрок - {len(table_values)}, колонок - '
-            f'{len(charity_project[1])} превышает заданные знеачения: '
+            f'{max_length} превышает заданные знеачения: '
             f'строк - {ROW}, колонок - {COLUMN}.'
         )
     try:
@@ -107,7 +107,7 @@ async def update_spreadsheets_value(
             service.spreadsheets.values.update(
                 spreadsheetId=spreadsheet_id,
                 range=f'R1C1:R{len(table_values)}'
-                      f'C{len(table_values[2])}',
+                      f'C{max_length}',
                 valueInputOption='USER_ENTERED',
                 json={
                     'majorDimension': 'ROWS',
@@ -116,4 +116,4 @@ async def update_spreadsheets_value(
             )
         )
     except AiogoogleError as error:
-        raise GoggleError(str(error))
+        raise AiogoogleError(str(error))
