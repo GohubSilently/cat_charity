@@ -116,4 +116,4 @@ async def update_spreadsheets_value(
             )
         )
     except AiogoogleError as error:
-        raise GoggleError(str(error))
+        raise GoggleError(str(error))\
