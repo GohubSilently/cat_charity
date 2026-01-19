@@ -1,8 +1,9 @@
 import copy
 from datetime import datetime
 
-from aiogoogle import Aiogoogle
+from aiogoogle import Aiogoogle, ValidationError
 from aiogoogle.excs import AiogoogleError
+from pycodestyle import maximum_doc_length
 
 from app.core.config import settings
 
@@ -91,11 +92,8 @@ async def update_spreadsheets_value(
             )
         ) for name, create_date, close_date, description in charity_project]
     ]
-    max_length = 0
-    for value in table_values:
-        if len(value) > max_length:
-            max_length = len(value)
-    if len(table_values) > ROW or len(table_values[2]) > COLUMN:
+    max_length = max(len(row) for row in table_values)
+    if len(table_values) > ROW or max_length > COLUMN:
         raise ValueError(
             'Объем входных данных: '
             f'cтрок - {len(table_values)}, колонок - '
@@ -116,4 +114,4 @@ async def update_spreadsheets_value(
             )
         )
     except AiogoogleError as error:
-        raise AiogoogleError(str(error))
+        raise ValidationError(str(error))

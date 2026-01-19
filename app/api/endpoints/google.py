@@ -1,6 +1,6 @@
 from http import HTTPStatus
 
-from aiogoogle import Aiogoogle, AiogoogleError
+from aiogoogle import Aiogoogle, ValidationError
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -38,7 +38,7 @@ async def get_report(
             charity_projects,
             wrapper_services
         )
-    except AiogoogleError as error:
+    except ValidationError as error:
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST, detail=str(error)
         )
