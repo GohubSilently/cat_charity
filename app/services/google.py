@@ -3,7 +3,6 @@ from datetime import datetime
 
 from aiogoogle import Aiogoogle, ValidationError
 from aiogoogle.excs import AiogoogleError
-from pycodestyle import maximum_doc_length
 
 from app.core.config import settings
 
