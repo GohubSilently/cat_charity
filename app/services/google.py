@@ -1,7 +1,7 @@
 import copy
 from datetime import datetime
 
-from aiogoogle import Aiogoogle, ValidationError
+from aiogoogle import Aiogoogle
 from aiogoogle.excs import AiogoogleError
 
 from app.core.config import settings
@@ -99,18 +99,15 @@ async def update_spreadsheets_value(
             f'{max_length} превышает заданные знеачения: '
             f'строк - {ROW}, колонок - {COLUMN}.'
         )
-    try:
-        await wrapper_services.as_service_account(
-            service.spreadsheets.values.update(
-                spreadsheetId=spreadsheet_id,
-                range=f'R1C1:R{len(table_values)}'
-                      f'C{max_length}',
-                valueInputOption='USER_ENTERED',
-                json={
-                    'majorDimension': 'ROWS',
-                    'values': table_values
-                }
-            )
+    await wrapper_services.as_service_account(
+        service.spreadsheets.values.update(
+            spreadsheetId=spreadsheet_id,
+            range=f'R1C1:R{len(table_values)}'
+                  f'C{max_length}',
+            valueInputOption='USER_ENTERED',
+            json={
+                'majorDimension': 'ROWS',
+                'values': table_values
+            }
         )
-    except AiogoogleError as error:
-        raise ValidationError(str(error))
+    )

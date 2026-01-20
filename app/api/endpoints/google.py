@@ -38,7 +38,7 @@ async def get_report(
             charity_projects,
             wrapper_services
         )
-    except ValidationError as error:
+    except ValueError as error:
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST, detail=str(error)
         )
