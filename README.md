@@ -3,7 +3,9 @@
 [![Python](https://img.shields.io/badge/-Python-3771a1?style=flat&logo=Python&logoColor=ffffff)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/-FastAPI-009688?style=flat&logo=FastAPI&logoColor=ffffff)](https://fastapi.tiangolo.com/)
 [![FastAPI Users](https://img.shields.io/badge/-FastAPI--Users-B22222?style=flat&logo=fastapi&logoColor=ffffff)](https://fastapi-users.github.io/fastapi-users/)
-[![SQLAlchemy](https://img.shields.io/badge/-SQLAlchemy-blue?style=flat&logo=sqlalchemy&logoColor=ffffff)](https://www.sqlalchemy.org/)  
+[![SQLAlchemy](https://img.shields.io/badge/-SQLAlchemy-blue?style=flat&logo=sqlalchemy&logoColor=ffffff)](https://www.sqlalchemy.org/)
+[![Google API](https://img.shields.io/badge/-Google%20API-4285F4?style=flat&logo=google&logoColor=ffffff)](https://developers.google.com/apis)
+
 
 Автор – [Халин Вадим](https://t.me/gohub1)
 
